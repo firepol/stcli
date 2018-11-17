@@ -341,7 +341,7 @@ def send_sanity(addr, memo_type, asset):
     return True
 
 
-def send_asset(text):
+def send_asset(text, skip_prompt=False):
     # send 10 EURT antb123*papayame.com or send 1 XLM PUBKEY memo text
     if CONF['private_key'] == '':
         print('no private key setup  - pls type set to set key or c to create wallet')
@@ -371,13 +371,14 @@ def send_asset(text):
     if len(val) == 5:
         memo = val[4]
         memo_type = 'text'
-    print_formatted_text(HTML("""Are you sure you want to send
-                                <ansiyellow>%s</ansiyellow>
-                                <ansired>%s %s</ansired>
-                                with memo of <ansiblue>%s</ansiblue> (y/n)
-                                """ % (sendto, asset, amount, memo)))
-    text = session.prompt(u'> ', default='y')
-    if text != 'y': return
+    if not skip_prompt:
+        print_formatted_text(HTML("""Are you sure you want to send
+                                    <ansiyellow>%s</ansiyellow>
+                                    <ansired>%s %s</ansired>
+                                    with memo of <ansiblue>%s</ansiblue> (y/n)
+                                    """ % (sendto, asset, amount, memo)))
+        text = session.prompt(u'> ', default='y')
+        if text != 'y': return
     ret, asset_issuer = get_balance_issuer(amount, asset)
     if ret: return
     retsan = send_sanity(sendto, memo_type, asset)
