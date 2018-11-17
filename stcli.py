@@ -24,16 +24,18 @@ from stellar_base.builder import Builder, HORIZON_TEST, HORIZON_LIVE
 from stellar_base.keypair import Keypair
 from stellar_base.address import Address, AccountNotExistError
 from prompt_toolkit import print_formatted_text, HTML
-#optional
+# optional
 import pyqrcode
+
 PT = os.path.dirname(os.path.realpath(__file__))
 PTZ = PT + '/stcli.zip'
 PTC = PT + '/stcli.conf'
 CONF = {}
 compl = WordCompleter(['?', 'create', 'help', 'send', 'receive', 'trust',
-                      'asset', 'deposit', 'withdrawal', 'settings', 'balance', 'version'], ignore_case=True)
+                       'asset', 'deposit', 'withdrawal', 'settings', 'balance', 'version'], ignore_case=True)
 session = PromptSession(history=FileHistory('.myhistory'))
 VERSION = '0.1.5'
+
 
 def load_conf():
     global CONF
@@ -49,7 +51,7 @@ def load_conf():
 
 
 def unzip():
-    os.system('unzip -j -o '+ PTZ)
+    os.system('unzip -j -o ' + PTZ)
 
 
 def zipfile(passw):
@@ -82,7 +84,7 @@ def set_private_key():
 def create_conf():
     with open(PTC, 'w') as fp:
         fp.write('public_key = ""\nprivate_key = ""\nnetwork = "TESTNET"\nlanguage ' +
-                 '= "ENGLISH"\nstellar_address = ""\nairdrop="t"\npartner_key=""\n'+
+                 '= "ENGLISH"\nstellar_address = ""\nairdrop="t"\npartner_key=""\n' +
                  'multisig=""')
     load_conf()
     os.chmod(PTC, 0o700)
@@ -113,7 +115,7 @@ def set_account(settype, var1):
 def set_var(text):
     cmd = text.split()
     var = cmd[1].split('=')
-    if var[0] in ['inflation','home_domain']:
+    if var[0] in ['inflation', 'home_domain']:
         set_account(var[0], var[1])
         return
     if var[0] in ['multisig']:
@@ -162,13 +164,13 @@ def create_wallet():
 
 
 def list_balances(check_asset=''):
-    #print('Using public key: ' + CONF['public_key'])
+    # print('Using public key: ' + CONF['public_key'])
     c = Address(CONF['public_key'], network=CONF['network'])
     try:
         c.get()
     except AccountNotExistError:
         print_formatted_text(HTML('<ansiyellow>unfunded account... </ansiyellow> ' +
-                             'you need to hit <ansiblue>f to fund for testnet or type key for public</ansiblue> '))
+                                  'you need to hit <ansiblue>f to fund for testnet or type key for public</ansiblue> '))
         return
     r = requests.get("https://api.coinmarketcap.com/v1/ticker/stellar/?convert=EUR")
     rate = r.json()[0]
@@ -178,8 +180,9 @@ def list_balances(check_asset=''):
             if check_asset != '': continue
             usd_val = float(rate['price_usd']) * float(x['balance'])
             eur_val = float(rate['price_eur']) * float(x['balance'])
-            print_formatted_text(HTML('XLM: <ansiblue>' + x['balance'] + '</ansiblue> value: USD:' + "{:.2f}".format(usd_val)
-                  + ' EUR:' + "{:.2f}".format(eur_val)))
+            print_formatted_text(
+                HTML('XLM: <ansiblue>' + x['balance'] + '</ansiblue> value: USD:' + "{:.2f}".format(usd_val)
+                     + ' EUR:' + "{:.2f}".format(eur_val)))
         else:
             if check_asset != '':
                 if check_asset.upper() == x['asset_code'].upper():
@@ -196,7 +199,7 @@ def list_assets():
     b = json.loads(r.text)
     #    print(asset)
     for x in b['anchors']:
-        print(b['anchors'][x]['name']+":")
+        print(b['anchors'][x]['name'] + ":")
         ass = ''
         for y in b['anchors'][x]['assets'].keys():
             ass += y + ' '
@@ -271,11 +274,11 @@ def receive():
     text = pyqrcode.create(CONF['public_key'])
     print(text.terminal())
     print_formatted_text(HTML('\n to receive send funds to <ansiyellow>' +
-                         CONF['public_key'] + '</ansiyellow> wth no memo and network is ' + CONF['network'] +
-                         ' for crypto (BTC ETH) you need to trust and deposit or buy via pp'))
+                              CONF['public_key'] + '</ansiyellow> wth no memo and network is ' + CONF['network'] +
+                              ' for crypto (BTC ETH) you need to trust and deposit or buy via pp'))
     if CONF['stellar_address'] != "":
         print_formatted_text(HTML('or they can send to your federated key'
-                             + CONF['stellar_address'] + '</ansired>\n\n'))
+                                  + CONF['stellar_address'] + '</ansired>\n\n'))
 
 
 def horiz_lp():
@@ -383,13 +386,14 @@ def send_asset(text):
     if asset != 'XLM':
         send.append_payment_op(sendto, amount, asset, asset_issuer)
     else:
-         send.append_payment_op(sendto, amount)
+        send.append_payment_op(sendto, amount)
     if memo != '' and memo_type == 'text':
         send.add_text_memo(memo)
     if memo != '' and memo_type == 'id':
         send.add_id_memo(memo)
     if CONF['multisig'] != '':
-        print('You have 2of2 multisig - send this data to the other key to sign when you get it back type signsend data')
+        print(
+            'You have 2of2 multisig - send this data to the other key to sign when you get it back type signsend data')
         print(send.gen_xdr())
         return
     send.sign()
@@ -405,10 +409,10 @@ def signsend(text):
         print(' signing ' + data)
         sign = Builder(CONF['private_key'], network=CONF['network'])
         sign.import_from_xdr(data)
-        #key = session.prompt(u'Enter who you sign for? %s > ' % CONF['multisig'])
-	sign.sign()
-	print("send this to the other wallet and ask them to signsend it\n")
-	print(sign.gen_xdr())
+        # key = session.prompt(u'Enter who you sign for? %s > ' % CONF['multisig'])
+        sign.sign()
+        print("send this to the other wallet and ask them to signsend it\n")
+        print(sign.gen_xdr())
         return
     print(' signing and sending ' + data)
     c = Builder(CONF['private_key'], network=CONF['network'])
@@ -421,7 +425,7 @@ def signsend(text):
 
 def start_app():
     print_formatted_text(HTML('### WELCOME TO <ansired>stcli</ansired> - '
-                         + 'type <ansiblue>?</ansiblue> or help for commands ####\n\n'))
+                              + 'type <ansiblue>?</ansiblue> or help for commands ####\n\n'))
     load_conf()
     try:
         if 'private_key' not in CONF:
@@ -430,7 +434,7 @@ def start_app():
         print('no wallet? type k [key] to set the private key or c [create] to create wallet')
     try:
         print_formatted_text(HTML('Public key: <ansiyellow>' + CONF['public_key']
-                             + '</ansiyellow> network: ' + CONF['network']))
+                                  + '</ansiyellow> network: ' + CONF['network']))
     except:
         create_conf()
         print('using public key:' + CONF['public_key'] + 'network: ' + CONF['network'])
@@ -438,17 +442,18 @@ def start_app():
 
 
 def path_payment(text):
-        print('..checking path payment options not yet implemented')
+    print('..checking path payment options not yet implemented')
 
 
 def deposit(text):
     print_formatted_text(HTML('<ansiblue>\n### DEPOSIT ###</ansiblue>\n'))
-    print("Deposit servers allow you to cash in assets into your wallet. We support naobtc.com, apay.io and tempo.eu.com")
+    print(
+        "Deposit servers allow you to cash in assets into your wallet. We support naobtc.com, apay.io and tempo.eu.com")
     print("you need to trust the asset before depositing.. eg. trust api.io BCH")
     r = text.split()
     if len(r) > 2:
         server = text.split()[1]
-        asset =  text.split()[2].upper()
+        asset = text.split()[2].upper()
         print("deposit to " + server + " asset " + asset)
     else:
         print("server asset e.g. apay.io bch or naobtc.com btc")
@@ -458,67 +463,69 @@ def deposit(text):
         except:
             print('format error')
             return
-    if server not in ['tempo.eu.com','apay.io','naobtc.com']:
+    if server not in ['tempo.eu.com', 'apay.io', 'naobtc.com']:
         print('error ' + server + ' unsupported')
         return
-    print_formatted_text(HTML('<ansiyellow>' + asset + '</ansiyellow> will be send to: <ansiyellow>' + CONF['public_key']
-                             + '</ansiyellow> network: ' + CONF['network']))
+    print_formatted_text(
+        HTML('<ansiyellow>' + asset + '</ansiyellow> will be send to: <ansiyellow>' + CONF['public_key']
+             + '</ansiyellow> network: ' + CONF['network']))
     if not list_balances(check_asset=asset):
         print('ERROR need to trust asset: type trust %s %s' % (server, asset))
         return
     FED = toml.loads(requests.get('https://' + server + '/.well-known/stellar.toml').text)
-    deposit_server= FED['DEPOSIT_SERVER']
+    deposit_server = FED['DEPOSIT_SERVER']
     param = {}
     param['asset_code'] = asset.upper()
     param['account'] = CONF['public_key']
     if server == 'apay.io':
         deposit_server += '/deposit'
-        #url = '%s?asset_code=%s&account=%s' % (deposit_server, asset.upper(), CONF['public_key'])
+        # url = '%s?asset_code=%s&account=%s' % (deposit_server, asset.upper(), CONF['public_key'])
     elif server == 'tempo.eu.com':
         param['email'] = session.prompt(u' email address > ')
-        param['method'] = 'sepa' #session.prompt(u'method default: sepa (sepa, swift, cash, unistream) > ', default='sepa')
+        param[
+            'method'] = 'sepa'  # session.prompt(u'method default: sepa (sepa, swift, cash, unistream) > ', default='sepa')
         print('deposit needs to happen using sepa')
-        #url = '%s?asset_code=%s&account=%s&email=%s' % (deposit_server, asset.upper(), CONF['public_key'], email)
+        # url = '%s?asset_code=%s&account=%s&email=%s' % (deposit_server, asset.upper(), CONF['public_key'], email)
     else:
         pass
     #    url = '%s?asset_code=%s&account=%s' % (deposit_server, asset.upper(), CONF['public_key'])
-    #print('getting deposit info from ' + url)
+    # print('getting deposit info from ' + url)
     print(param)
     cont = session.prompt(u'Are you sure? (y/n) > ')
     if cont.lower() != 'y': return
     r = requests.get(deposit_server, params=param)
     print(r.url)
     res = r.json()
-    if server in['apay.io', 'naobtc.com']:
+    if server in ['apay.io', 'naobtc.com']:
         text = pyqrcode.create(res['how'])
         print(text.terminal())
     print(res)
     min_amount = str(res.setdefault('min_amount', ''))
     max_amount = str(res.setdefault('max_amount', ''))
     print_formatted_text(HTML('\nSEND ' + asset + ' to <ansiyellow> ' + res['how'] + ' </ansiyellow> you have '
-                         + str(int(res['eta']/60)) + ' min to make the payment. Amount min ' + asset + ' ' +
-                         min_amount + ' and max ' + max_amount  + ' ' + res['extra_info']))
+                              + str(int(res['eta'] / 60)) + ' min to make the payment. Amount min ' + asset + ' ' +
+                              min_amount + ' and max ' + max_amount + ' ' + res['extra_info']))
     return
 
 
 def set_multisig(trusted_key):
     print_formatted_text(HTML('<ansiblue>\n### SET MULTISIG ###</ansiblue>\n'))
     print('set multisig will currently make your key a 2 of 2 multisig address')
-    print_formatted_text(HTML('trusted key is:<ansired>'+ trusted_key +'</ansired>'))
-    print('it will set med threshold and high to 2 and master weight to 1 so you can use 2 keys for all sending or issuing tokens\n\n')
+    print_formatted_text(HTML('trusted key is:<ansired>' + trusted_key + '</ansired>'))
+    print(
+        'it will set med threshold and high to 2 and master weight to 1 so you can use 2 keys for all sending or issuing tokens\n\n')
     b = Builder(CONF['private_key'], network=CONF['network'])
     b.append_set_options_op(master_weight=1,
-			med_threshold=2,
-			high_threshold=2,
-			signer_address=trusted_key,
-			signer_type='ed25519PublicKey',
-			signer_weight=1,
-			source=None)
+                            med_threshold=2,
+                            high_threshold=2,
+                            signer_address=trusted_key,
+                            signer_type='ed25519PublicKey',
+                            signer_weight=1,
+                            source=None)
     b.sign()
     val = b.submit()
     print(val)
     return
-
 
 
 def withdrawal(text):
@@ -527,7 +534,7 @@ def withdrawal(text):
     r = text.split()
     if len(r) > 2:
         server = text.split()[1]
-        asset =  text.split()[2]
+        asset = text.split()[2]
     else:
         print("server asset e.g. tempo.eucom eurt, apay.io bch or naobtc.com btc")
         res = session.prompt(u'server asset> ')
@@ -536,13 +543,13 @@ def withdrawal(text):
         except:
             print('format error')
             return
-    if server not in ['tempo.eu.com','apay.io','naobtc.com','flutterwave.com']:
+    if server not in ['tempo.eu.com', 'apay.io', 'naobtc.com', 'flutterwave.com']:
         print('error ' + server + ' unsupported')
         return
     print_formatted_text(HTML('<ansiyellow>' + asset + '</ansiyellow> withdrawal from <ansiyellow>'
-                         + server + '</ansiyellow> network: ' + CONF['network']))
+                              + server + '</ansiyellow> network: ' + CONF['network']))
     FED = toml.loads(requests.get('https://' + server + '/.well-known/stellar.toml').text)
-    #print(FED)
+    # print(FED)
     param = {}
     param['type'] = 'forward'
     if server == 'tempo.eu.com':
@@ -552,12 +559,12 @@ def withdrawal(text):
         param['swift'] = session.prompt(u'swift/bic > ')
         param['receiver_name'] = session.prompt(u'receiver name > ')
         param['forward_type'] = 'bank_account'
-        #url = '%s?type=forward&forward_type=bank_account&iban=%s&swift=%s&email=%s' % (FED['FEDERATION_SERVER'],iban,swift,email)
-        #url = '%s?type=forward&iban=%s&swift=%s&email=%s' % (FED['FEDERATION_SERVER'],iban,swift,email)
+        # url = '%s?type=forward&forward_type=bank_account&iban=%s&swift=%s&email=%s' % (FED['FEDERATION_SERVER'],iban,swift,email)
+        # url = '%s?type=forward&iban=%s&swift=%s&email=%s' % (FED['FEDERATION_SERVER'],iban,swift,email)
     else:
         param['account'] = session.prompt(u'crypto destination account > ')
-        #url = FED['FEDERATION_SERVER'] +'?type=forward&account=%s' % account
-    #print('getting federation with ' + url)
+        # url = FED['FEDERATION_SERVER'] +'?type=forward&account=%s' % account
+    # print('getting federation with ' + url)
     print(param)
     cont = session.prompt(u'Are you sure? (y/n) > ', default='n')
     if cont.lower() != 'y': return
@@ -565,9 +572,10 @@ def withdrawal(text):
     print(r.url)
     res = r.json()
     print(res)
-    #print_formatted_text(HTML('\nSEND ' + asset + ' to <ansiyellow> ' + res['how'] + ' </ansiyellow>you have ' + str(int(res['eta']/60))
+    # print_formatted_text(HTML('\nSEND ' + asset + ' to <ansiyellow> ' + res['how'] + ' </ansiyellow>you have ' + str(int(res['eta']/60))
     #                     + ' min and ' + res['extra_info']))
     return
+
 
 def sys_exit():
     saveconf = session.prompt(u'save zip encrypted configuration (y/n)> ')
@@ -582,26 +590,45 @@ if __name__ == "__main__":
     while True:
         text = session.prompt(u'> ', completer=compl, complete_while_typing=True,
                               vi_mode=True, auto_suggest=AutoSuggestFromHistory())
-        if text == 'help' or text == '?': print_help()
-        elif text == '': continue
-        elif text == 'create' or text == 'c': create_wallet()
-        elif text == 'balance' or text == 'b': list_balances()
-        elif text == 'history' or text == 'h': history()
-        elif text[:8] == 'signsend': signsend(text)
-        elif text == 'quit'or text == 'q': sys_exit()
-        elif text == 'key'or text == 'k': set_private_key()
-        elif text == 'receive'or text == 'r': receive()
-        elif text == 'fund'or text == 'f': fund()
-        elif text == 'list'or text == 'l': list_assets()
-        elif text == 'conf': print(toml.dumps(CONF))
+        if text == 'help' or text == '?':
+            print_help()
+        elif text == '':
+            continue
+        elif text == 'create' or text == 'c':
+            create_wallet()
+        elif text == 'balance' or text == 'b':
+            list_balances()
+        elif text == 'history' or text == 'h':
+            history()
+        elif text[:8] == 'signsend':
+            signsend(text)
+        elif text == 'quit' or text == 'q':
+            sys_exit()
+        elif text == 'key' or text == 'k':
+            set_private_key()
+        elif text == 'receive' or text == 'r':
+            receive()
+        elif text == 'fund' or text == 'f':
+            fund()
+        elif text == 'list' or text == 'l':
+            list_assets()
+        elif text == 'conf':
+            print(toml.dumps(CONF))
         elif text.split(" ")[0] == 'set':
             set_var(text)
-        elif text == 'version' or text == 'v': print('VERSION: ' + VERSION)
-        elif text[0] == 'd': deposit(text)
-        elif text[0] == 'w': withdrawal(text)
-        elif text[0] == 't': trust_asset(text)
-        elif text[0] == 'u': trust_asset(text)
-        elif text[0] == 's': send_asset(text)
-        elif text[0] == '!': os.system(text[1:])
+        elif text == 'version' or text == 'v':
+            print('VERSION: ' + VERSION)
+        elif text[0] == 'd':
+            deposit(text)
+        elif text[0] == 'w':
+            withdrawal(text)
+        elif text[0] == 't':
+            trust_asset(text)
+        elif text[0] == 'u':
+            trust_asset(text)
+        elif text[0] == 's':
+            send_asset(text)
+        elif text[0] == '!':
+            os.system(text[1:])
         else:
             print('You entered:', text)
